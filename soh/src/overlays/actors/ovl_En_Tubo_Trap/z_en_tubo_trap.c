@@ -229,6 +229,7 @@ void EnTuboTrap_HandleImpact(EnTuboTrap* this, PlayState* play) {
 void EnTuboTrap_WaitForProximity(EnTuboTrap* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     f32 targetHeight;
+    float playerDistance;
 
     if (BREG(2) != 0) {
         osSyncPrintf(VT_FGCOL(GREEN) "☆☆☆☆☆ わて     ☆☆☆☆☆ %f\n" VT_RST, this->actor.world.pos.y);   // "You"
@@ -236,7 +237,13 @@ void EnTuboTrap_WaitForProximity(EnTuboTrap* this, PlayState* play) {
         osSyncPrintf("\n\n");
     }
 
-    if (this->actor.xzDistToPlayer < 200.0f && this->actor.world.pos.y <= player->actor.world.pos.y) {
+    if (this->actor.params == 666) {
+        playerDistance = 1200.0f;
+    } else {
+        playerDistance = 200.0f;
+    }
+
+    if (this->actor.xzDistToPlayer < playerDistance && this->actor.world.pos.y <= player->actor.world.pos.y) {
         Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_ENEMY);
         this->actor.flags |= ACTOR_FLAG_TARGETABLE;
         targetHeight = 40.0f + -10.0f * gSaveContext.linkAge;
@@ -269,7 +276,9 @@ void EnTuboTrap_Fly(EnTuboTrap* this, PlayState* play) {
     f32 dz = this->originPos.z - this->actor.world.pos.z;
 
     Audio_PlayActorSound2(&this->actor, NA_SE_EN_TUBOOCK_FLY - SFX_FLAG);
-
+    if (this->actor.params == 666) {
+        this->actor.speedXZ = 70.0f;
+    }
     if (240.0f < sqrtf(SQ(dx) + SQ(dy) + SQ(dz))) {
         Math_ApproachF(&this->actor.gravity, -3.0f, 0.2f, 0.5f);
     }

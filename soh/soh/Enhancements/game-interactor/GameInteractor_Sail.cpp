@@ -5,6 +5,16 @@
 #include <libultraship/libultraship.h>
 #include <nlohmann/json.hpp>
 
+extern "C" {
+#include <z64.h>
+#include "macros.h"
+#include "functions.h"
+#include "variables.h"
+#include "functions.h"
+extern SaveContext gSaveContext;
+extern PlayState* gPlayState;
+}
+
 template <class DstType, class SrcType>
 bool IsType(const SrcType* src) {
   return dynamic_cast<const DstType*>(src) != nullptr;
@@ -21,7 +31,7 @@ void GameInteractorSail::Enable() {
         HandleRemoteJson(payload);
     });
     GameInteractor::Instance->RegisterRemoteConnectedHandler([&]() {
-        RegisterHooks();
+        //RegisterHooks();
     });
 }
 
@@ -57,6 +67,22 @@ void GameInteractorSail::HandleRemoteJson(nlohmann::json payload) {
         }
 
         std::string payloadType = payload["type"].get<std::string>();
+
+        if (payloadType == "pos") {
+            Player* player = GET_PLAYER(gPlayState);
+
+            nlohmann::json payload;
+            payload["id"] = std::rand();
+            payload["type"] = "hook";
+            payload["hook"]["type"] = "PlayerUpdate";
+            payload["hook"]["posX"] = player->actor.world.pos.x;
+            payload["hook"]["posY"] = player->actor.world.pos.y;
+            payload["hook"]["posZ"] = player->actor.world.pos.z;
+
+            GameInteractor::Instance->TransmitJsonToRemote(payload);
+
+            return;
+        }
 
         if (payloadType == "command") {
             if (!payload.contains("command")) {
@@ -106,7 +132,7 @@ void GameInteractorSail::HandleRemoteJson(nlohmann::json payload) {
                 return;
             }
 
-            GameInteractionEffectBase* giEffect = EffectFromJson(payload["effect"]);
+         GameInteractionEffectBase* giEffect = EffectFromJson(payload["effect"]);
             if (giEffect) {
                 GameInteractionEffectQueryResult result;
                 if (effectType == "remove") {
